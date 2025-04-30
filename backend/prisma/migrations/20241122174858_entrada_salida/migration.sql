@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Marcaciones" ALTER COLUMN "entrada" SET DATA TYPE TEXT,
+ALTER COLUMN "salida" SET DATA TYPE TEXT;
