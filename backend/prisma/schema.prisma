@@ -13,19 +13,165 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id                    String                  @id @default(uuid())
-  name                  String
-  email                 String                  @unique
-  password              String
-  role                 Role       @default(CAJERO)
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CAJERO)
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
   ADMIN
   CAJERO
   ANALISTA
+}
+
+// ...existing code...
+
+// Cambios realizados:
+// Productos (Product): Incluye información básica como nombre, descripción, precio, stock y tipo.
+// Categorías y Subcategorías (Category, SubCategory): Relacionadas con los productos.
+// Órdenes (Order, OrderProduct): Relacionan clientes con productos y cantidades.
+// Clientes (Client): Información básica de los clientes.
+// Recepciones (Reception): Registro de recepciones de productos.
+// Histórico de movimientos (ProductMovementHistory): Registra movimientos de inventario.
+// Enums: ProductType para tipos de productos y MovementType para tipos de movimientos.
+// Asegúrate de ejecutar npx prisma generate después de realizar estos cambios para actualizar el cliente de Prisma.
+
+model Product {
+  id                     String                   @id @default(uuid())
+  name                   String
+  description            String?
+  price                  Float
+  stock                  Int
+  type                   ProductType
+  categoryId             String
+  category               Category                 @relation(fields: [categoryId], references: [id])
+  subCategoryId          String?
+  subCategory            SubCategory?             @relation(fields: [subCategoryId], references: [id])
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  OrderProduct           OrderProduct[]
+  Reception              Reception[]
+  ProductMovementHistory ProductMovementHistory[]
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String
+  subCategories SubCategory[]
+  products      Product[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model SubCategory {
+  id         String   @id @default(uuid())
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  Product Product[]
+}
+
+model Order {
+  id        String         @id @default(uuid())
+  clientId  String
+  client    Client         @relation(fields: [clientId], references: [id])
+  products  OrderProduct[]
+  total     Float
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  empresaId String
+  empresa   Empresa        @relation(fields: [empresaId], references: [id])
+}
+
+model OrderProduct {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Empresa {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  ruc_or_nit String   @unique
+  phone      String?
+  direccion  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  User       User[]
+
+  Client Client[]
+
+  Reception Reception[]
+
+  ProductMovementHistory ProductMovementHistory[]
+
+  Order Order[]
+
+  SubCategory SubCategory[]
+}
+
+model Client {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  ruc_or_nit String   @unique
+  phone      String?
+  direccion  String?
+  orders     Order[]
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Reception {
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  receivedAt DateTime @default(now())
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ProductMovementHistory {
+  id           String       @id @default(uuid())
+  productId    String
+  product      Product      @relation(fields: [productId], references: [id])
+  movementType MovementType
+  quantity     Int
+  empresaId    String
+  empresa      Empresa      @relation(fields: [empresaId], references: [id])
+  createdAt    DateTime     @default(now())
+}
+
+enum ProductType {
+  PHYSICAL
+  DIGITAL
+  SERVICE
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
 }
